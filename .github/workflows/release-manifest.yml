@@ -12,6 +12,9 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -20,18 +23,25 @@ jobs:
     name: Generate & validate release manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Harden runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          # Start in audit mode; switch to `block` with an allowed-endpoints
+          # list once the egress baseline from audit runs is reviewed.
+          egress-policy: audit
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         with:
           targets: wasm32v1-none
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
       # Only the Soroban contract crates target wasm32v1-none; see ci.yml.
       - name: Build contract wasm (unoptimized — matches upgrade-hash verification)
         run: cargo build --release --locked --target wasm32v1-none -p multisig-account -p attester-registry -p attestation-registry
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - run: pip install jsonschema
@@ -49,7 +59,7 @@ jobs:
             release-manifest.json \
             docs/release-manifest/examples/lafiya-web.requirements.json
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-manifest
           path: release-manifest.json

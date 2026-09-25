@@ -25,10 +25,10 @@ wasm:
 wasm-contracts:
 	cargo build --release --locked --target wasm32v1-none -p multisig-account -p attester-registry -p attestation-registry
 
-test-integration: wasm
+test-integration: wasm-contracts
 	./tests/integration/run.sh
 
-check: fmt-check clippy test wasm
+check: fmt-check clippy test wasm-contracts
 
 bindings: wasm
 	stellar contract bindings typescript --wasm target/wasm32v1-none/release/attester_registry.wasm --output-dir bindings/attester-registry --overwrite

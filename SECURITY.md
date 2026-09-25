@@ -68,3 +68,54 @@ Once a vulnerability is fixed, details may be published via a GitHub
 security advisory and noted in [CHANGELOG.md](CHANGELOG.md). General
 contributions (non-security) follow the workflow in
 [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## CI supply-chain hardening
+
+The CI pipeline builds the wasm that becomes trusted contract code, so it is
+part of the trust base.
+
+- **Pinned actions.** Every `uses:` reference is pinned to a full commit SHA
+  with the release in a trailing comment (`uses: actions/checkout@<sha> # v7.0.1`).
+  Dependabot's `github-actions` ecosystem (`.github/dependabot.yml`) opens PRs
+  that bump the SHA and the comment together. Never reference an action by tag
+  or branch.
+- **Least-privilege tokens.** Every workflow declares top-level
+  `permissions: contents: read`. Jobs raise it only where needed:
+  `docs.yml` (`contents: write`, to push `gh-pages`), `stale.yml`
+  (`issues`/`pull-requests: write`), and `scorecard.yml` / `security-scan.yml`
+  (`security-events: write`, plus `id-token: write` for Scorecard publishing).
+- **Verified downloads.** Binaries fetched with `curl` (stellar-cli in
+  `smoke-test.yml`, gitleaks in `security-scan.yml`) are checked against a
+  pinned SHA-256 with `sha256sum -c`. Bump the URL and checksum together.
+- **Runner hardening.** The release (`release-manifest.yml`) and deploy
+  (`docs.yml`) jobs run `step-security/harden-runner` in `egress-policy: audit`.
+  After reviewing the observed endpoints from a few runs, switch to
+  `egress-policy: block` with an `allowed-endpoints` list.
+- **OpenSSF Scorecard** (`scorecard.yml`) runs weekly and on every push to
+  `main`, uploads results to code scanning, and publishes the README badge.
+  Baseline score: *not yet published* (no Scorecard run existed before this
+  workflow). Record the first run's score here as the "before" value and the
+  score after the fixes it reports as the "after" value.
+
+### Recommended ruleset for `main`
+
+Maintainers should apply these via **Settings → Rules → Rulesets** (they
+cannot be set from a pull request):
+
+| Setting | Value |
+| --- | --- |
+| Restrict deletions / block force pushes | On |
+| Require a pull request before merging | On, 1 approval |
+| Require review from Code Owners | On (see `.github/CODEOWNERS`) |
+| Dismiss stale approvals on new commits | On |
+| Require status checks to pass | `Shell lint (smoke-test.sh)`, `Format`, `Clippy`, `Test`, `Build (wasm32v1-none)`, `docs`, `CodeQL (*)`, `Semgrep (Soroban rules)`, `gitleaks` |
+| Require branches to be up to date before merging | On |
+| Require signed commits | Optional (recommended once all maintainers sign) |
+| Bypass list | Empty (admins included) |
+
+**Would this have blocked the `lafiya-cli` build breakage?** Only if the
+failing job is a *required* check and branches must be up to date. A
+breakage that passes on a stale PR branch but fails after merging with a
+newer `main` is exactly what "require branches to be up to date" catches;
+without required checks, a red CI run does not prevent merging. Enabling
+both settings above closes that gap.

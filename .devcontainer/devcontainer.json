@@ -1,0 +1,19 @@
+{
+  "name": "Lafiya contract",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspaces/Lafiya-contract",
+  "remoteUser": "vscode",
+  "hostRequirements": { "cpus": 4, "memory": "8gb" },
+  // Runs during Codespaces prebuilds, so the wasm build is cached.
+  "onCreateCommand": "make wasm-contracts",
+  // Needs the running local network, so it runs per-container.
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "waitFor": "onCreateCommand",
+  "forwardPorts": [8000, 5432],
+  "customizations": {
+    "vscode": {
+      "extensions": ["rust-lang.rust-analyzer", "tamasfe.even-better-toml", "ms-python.python"]
+    }
+  }
+}

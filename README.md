@@ -5,6 +5,7 @@
 [![Status](https://img.shields.io/badge/status-pre--alpha-orange)]()
 [![Network](https://img.shields.io/badge/network-testnet-lightgrey)]()
 [![CI](https://github.com/Lafiya-xyz/Lafiya-contract/actions/workflows/ci.yml/badge.svg)](https://github.com/Lafiya-xyz/Lafiya-contract/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Lafiya-xyz/Lafiya-contract/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Lafiya-xyz/Lafiya-contract)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Docs](https://github.com/Lafiya-xyz/Lafiya-contract/actions/workflows/docs.yml/badge.svg)](https://Lafiya-xyz.github.io/Lafiya-contract/)
 

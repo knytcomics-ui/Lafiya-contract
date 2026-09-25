@@ -6,23 +6,32 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   docs:
     runs-on: ubuntu-latest
+    permissions:
+      # Needed only by the gh-pages deploy step (pushes to the gh-pages branch).
+      contents: write
     steps:
-      - uses: actions/checkout@v7
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Harden runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
-          toolchain: stable
-          override: true
+          # Start in audit mode; switch to `block` with an allowed-endpoints
+          # list once the egress baseline from audit runs is reviewed.
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
       - name: Build docs
         run: cargo doc --workspace --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push'
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: target/doc

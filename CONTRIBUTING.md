@@ -21,6 +21,32 @@ See [Local Setup > Prerequisites](#prerequisites) for the tools you'll need befo
 The core development environment requires Rust and the Soroban SDK.
 For the quick-start commands, see the [Getting Started](README.md#getting-started) section in the `README.md`.
 
+### Recommended: devcontainer / Codespaces
+
+The recommended setup is the devcontainer in [`.devcontainer/`](.devcontainer/).
+Open the repository in VS Code with the Dev Containers extension ("Reopen in
+Container") or create a GitHub Codespace. It provides, with every version
+pinned and every download checksum-verified:
+
+- the Rust channel from `rust-toolchain.toml` with `wasm32v1-none`, `rustfmt`,
+  `clippy`, plus nightly for `cargo-fuzz`;
+- `stellar-cli`, `cargo-nextest`, `cargo-mutants`, `cargo-fuzz`, `just`;
+- Python 3.12 with `jsonschema`, and Node 22 LTS with pnpm;
+- sidecars: `stellar/quickstart --local` (Soroban RPC on port 8000, with a
+  health check) and `postgres` for the indexer.
+
+On creation it builds the contract wasm, adds the `local` network to
+`stellar-cli`, and creates and funds a `dev` identity. After that, `make check`
+and `make test-integration` work with no manual steps.
+
+**Codespaces prebuilds:** maintainers enable them under *Settings → Codespaces
+→ Prebuild configurations* for `main`, using `.devcontainer/devcontainer.json`.
+The image build and `onCreateCommand` (wasm build) run in the prebuild, so a
+new codespace is ready in about two minutes. The `Devcontainer` workflow
+builds the container and runs `make check` inside it so the setup can't rot.
+
+If you would rather set up your machine by hand, install the prerequisites below.
+
 ### Prerequisites
 - **Rust (stable)**: Install via [rustup](https://rustup.rs).
 - **Wasm target**: `rustup target add wasm32v1-none` (pinned via `rust-toolchain.toml`).
@@ -146,6 +172,27 @@ There is no `rustfmt.toml` in this repo — that's intentional, not an oversight
 - Run `make check` locally before pushing; it's the same set of checks CI
   runs.
 - Keep `Cargo.lock` committed and up to date so builds are reproducible.
+
+### On-chain Data Review Checklist
+
+Anything written to the ledger is public and permanent. Before adding or
+changing a `#[contracttype]` stored under a `DataKey`, or any
+`#[contractevent]`, answer these in the PR description:
+
+- [ ] **Personal data?** Can the value, alone or combined with other on-chain
+      data, timing, or a small cohort (e.g. one LGA), identify a CHW or a
+      patient? If yes or maybe, justify why it must be on-chain.
+- [ ] **No plaintext or low-entropy health data.** Any hash over patient or
+      CHW attributes includes a mandatory random salt (≥128 bits) kept
+      off-chain, so it can be crypto-shredded.
+- [ ] **No reasons or free text** about a person (e.g. suspension reason codes).
+- [ ] **Minimised granularity.** Use the coarsest region/time precision that
+      works; prefer storage reads over events for data that doesn't need to be
+      indexed.
+- [ ] **Erasure path.** You can say what an NDPA erasure request means for
+      this element (shred salt, revoke, remove, or accepted risk).
+- [ ] **Inventory updated.** [docs/compliance/ndpa-onchain-analysis.md](docs/compliance/ndpa-onchain-analysis.md)
+      section 3 (and section 5 if risk changes) reflects the new field.
 
 ## Pull Request Process
 

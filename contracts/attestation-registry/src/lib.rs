@@ -305,6 +305,9 @@ impl AttestationRegistry {
 
         let registry_id = Self::attester_registry(&env)?;
         let registry = AttesterRegistryClient::new(&env, &registry_id);
+        // A failing call into the admin-configured registry should abort the
+        // attestation, so the panicking (non-`try_`) client is intended here.
+        // nosemgrep: soroban-panicking-cross-contract-call
         if !registry.is_attester(&attester) {
             return Err(Error::AttesterNotAllowlisted);
         }
